@@ -1,2 +1,4 @@
 varzeshSite/__pycache__/
+UsersSite/migrations/__pycache__/
+UsersSite/__pycache__/
 db.sqlite3
