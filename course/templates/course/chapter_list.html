@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block navbar_links %}
+    <li class="nav-item active">
+         <a class="nav-link" href="{{ current_course_link }}"> {{ course.title }}</a>
+    </li>
+{% endblock %}
+
+{% block content %}
+    {% load static %}
+
+    <main role="main">
+
+      <section class="jumbotron text-center">
+        <div class="container">
+          <h1 class="jumbotron-heading">لیست فصول</h1>
+          <p class="lead text-muted"> .در این صفحه می توانید درس موردنظر خود را انتخاب کنید</p>
+            <p class="breadcrumb text-muted" style="display: initial; text-align: center"> {{ started_date }}زمان شروع درس </p>
+            <p class="lead" id="timer"></p>
+            <input type="hidden" value="{{ started_date }}" id="start_date">
+            <input type="hidden" value="{{ is_finished }}" id="is_finished">
+            <script src="{% static '/js/base_course_timer.js' %}"></script>
+        </div>
+      </section>
+
+      <div class="album py-5 bg-light">
+        <div class="container">
+          <div class="row">
+              {% for chapter, value in chapters.items %}
+            <div class="col-md-4">
+              <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <p class="font-weight-bold text-center">{{ chapter.title }}</p>
+                </div>
+                  <div class="progress">
+                    <div class="progress-bar progress-bar-striped bg-info"
+                         role="progressbar" style="width: {{ value.progress }}%"
+                         aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                        {{ value.progress }}
+                    </div>
+                  </div>
+                <div class="card-body">
+                  <p class="card-text">{{ chapter.content |safe }}</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group">
+                         <button type="button" class="btn btn-sm btn-outline-secondary"
+                                 data-toggle="collapse" data-target="#sections-{{ chapter.id }}"
+                                 {% if value.is_locked %}disabled{% endif %}>مشاهده</button>
+                    </div>
+                        <div class="collapse" id="sections-{{ chapter.id }}">
+                          <div class="card card-body">
+                            <ul class="list-group">
+                                {% for section in chapter.sections.all %}
+                                    <a href="{% url 'course:section-detail' course_slug=chapter.course.slug chapter_slug=chapter.slug section_slug=section.slug %}"><li class="list-group-item">{{ section.title }}</li></a>
+                                {% endfor %}
+                            </ul>
+                          </div>
+                        </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+              {% endfor %}
+          </div>
+        </div>
+              <hr class="featurette-divider">
+
+        <div class="row featurette">
+          <div class="col-md-9" style="text-align: right">
+            <h2 class="featurette-heading" style="text-align: right">درباره مدرس <span class="text-muted">{{ professor_name }}</span></h2>
+            <p class="lead">{{ professor_description }}</p>
+          </div>
+
+          {% load static %}
+          <div class="row col-md-3">
+              <img class="featurette-image img-fluid mx-auto" src="{{ professor_picture_url }}" height="400" width="280">
+        </div>
+
+        <hr class="featurette-divider">
+
+      </div>
+      </div>
+
+    </main>
+
+
+
+{% endblock %}

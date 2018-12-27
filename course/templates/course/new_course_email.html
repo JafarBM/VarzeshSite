@@ -1,0 +1,42 @@
+{% extends 'base_email.html' %}
+
+{% block content %}
+<body bgcolor="#f6f6f6">
+
+<!-- body -->
+<table class="body-wrap">
+	<tr>
+		<td></td>
+		<td class="container" style="background-image:url('{{ cover }}');background-repeat: no-repeat;background-position: center;background-size: cover;">
+            <!-- content -->
+            <div class="content">
+			<table>
+				<tr>
+					<td>
+						<span style="background-color: #f8f8f888;text-align: right;direction:rtl;color: #000;font-size:2vw;display: -webkit-box;">سلام!</span>
+						<br/>
+                        <span style="background-color: #f8f8f888;text-align: right;direction:rtl;color: #000;font-size:1vw;display: -webkit-box;">درس {{ course.title }} اضافه شده است.</span>
+						<br/>
+                        <span style="background-color: #f8f8f888;text-align: right;direction:rtl;color: #000;font-size:1vw;display: -webkit-box;">برای دیدن جزییات بیشتر روی لینک زیر کلیک کنید.</span>
+						<table>
+							<tr>
+								<td class="padding">
+									<p style="text-align: right"><a href="{% url 'course:chapter_list' course.slug %}" class="btn-primary">لینک درس</a></p>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+			</div>
+			<!-- /content -->
+
+		</td>
+		<td></td>
+	</tr>
+</table>
+<!-- /body -->
+
+
+</body>
+{% endblock %}

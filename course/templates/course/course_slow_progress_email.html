@@ -1,0 +1,42 @@
+{% extends 'base_email.html' %}
+
+{% block content %}
+<body bgcolor="#f6f6f6">
+
+<!-- body -->
+<table class="body-wrap">
+	<tr>
+		<td></td>
+		<td class="container" bgcolor="#FFFFFF">
+
+			<!-- content -->
+			<div class="content">
+			<table>
+				<tr>
+					<td>
+						<p style="text-align:right;  direction: rtl; color: #2ecc71 ; font-size: 2vw;">سلام{{ member.username }} !</p>
+						<p style="text-align:right;  direction: rtl; color: #34495e ; font-size: 1vw; ">شما درس {{ course.title }}خود را تمام نکرده‌اید.</p>
+						<p style="text-align:right;  direction: rtl; color: #34495e ; font-size: 1vw; ">برای دیدن جزییات بیشتر روی لینک زیر کلیک کنید.</p>
+						<table>
+							<tr>
+								<td class="padding">
+									<p style="text-align: right"><a href="{% url 'course:chapter_list' course.slug %}" class="btn-primary">لینک درس</a></p>
+                                    <p style="text-align: right"><a href="" class="btn-primary">لینک درس</a></p>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+			</div>
+			<!-- /content -->
+
+		</td>
+		<td></td>
+	</tr>
+</table>
+<!-- /body -->
+
+
+</body>
+{% endblock %}

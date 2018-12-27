@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="container">
+
+
+    <section class="jumbotron text-center">
+        <div class="container">
+            <h1 class="jumbotron-heading">لیست دروس</h1>
+            <p class="lead text-muted"> .در این صفحه می توانید درس موردنظر خود را انتخاب کنید</p>
+        </div>
+    </section>
+
+</div>
+
+<main role="main" class="container">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="row">
+                {% for course, value in courses.items %}
+                <div class="col-md-4">
+                    <div class="card mb-4 box-shadow">
+                        <div class="card-header" style="background-image:url('{{ value.cover }}');background-repeat: no-repeat;background-position: center;height: 234px;background-size: cover;
+;position: relative; opacity: 0.5">
+                        </div>
+                        <span class="font-weight-bold text-center" style="position:absolute;bottom: 70%;left: 20%;">{{ course.title }} </span>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped bg-info"
+                                 role="progressbar" style="width: {{ value.progress }}%"
+                                 aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                                {{ value.progress }}
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="card-text">{{ course.content|safe }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group">
+                                    <a href="{% url 'course:chapter_list' course.slug %}"
+                                       class="btn btn-sm btn-outline-secondary {% if value.is_locked %} disabled {% endif %}"
+                                       role="button">مشاهده</a>
+                                    {% if value.can_enroll %}
+                                    <form action="{% url 'course:course_enroll' course.slug %}"
+                                          method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                {% if value.is_locked %}disabled{% endif %}>ثبت نام
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <p class="card-text text-right cke_rtl m-lg-0 font">
+                            <small>
+                                {% for tags in value.tags %}
+                                ،
+                                {{ tags }}
+                                {% endfor %}
+                                :برچسب‌ها
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div><!-- /.blog-main -->
+
+        <aside class="col-md-3 blog-sidebar">
+            <div class="p-3">
+                <h4 class="text-center">دسته بندی</h4>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item">
+                        <div>
+                            <a href="{% url 'course:course_list' %}"><h6 class="my-2 text-center">همه دروس</h6></a>
+                        </div>
+                    </li>
+                    {% for category in categories %}
+                    <li class="list-group-item">
+                        <div>
+                            <a href="?category_id={{ category.id }}"><h6
+                                    class="my-2 text-center">{{ category.name }}</h6></a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+
+        </aside><!-- /.blog-sidebar -->
+
+    </div><!-- /.row -->
+
+</main><!-- /.container -->
+
+
+{% endblock %}

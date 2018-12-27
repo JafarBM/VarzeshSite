@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% load static %}
+{% load course_extra %}
+{% load extra_functions %}
+
+{% block navbar_links %}
+    <!-- TODO: download font-awsome to static -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{% static 'feed_back.css' %}">
+
+    <link rel="stylesheet" href="">
+        <input type="hidden" name="date_time" value="{{ started_time }}" id="start_date">
+        <input type="hidden" value="{{ is_finished }}" id="is_finished">
+        <script src="{% static '/js/base_course_timer.js' %}" ></script>
+        <li class="nav-item active"><a class="nav-link" href="{{ current_course_link }}"> {{ current.section.chapter.course.title }}</a></li>
+        <li class="nav-item active"><a class="nav-link inactiveLink" href="#"> {{ current.section.chapter.title }}</a></li>
+        <li class="nav-item" aria-current="page" disabled="true"> <a href="#" class="nav-link inactiveLink">{{ current.section.title }}
+            | {{ current.section.point }}</a> </li>
+        <li class="nav-item active" style="text-align: right"><a class="nav-link inactiveLink" href="#" disabled id="timer"></a></li>
+
+{% endblock %}
+{% block rating %}
+    {% with ''|center:orange_star_number as range %}
+        {% for _ in range %}
+            <span class="fa fa-star" style="color:orange"></span>
+        {% endfor %}
+    {% endwith %}
+    {% with ''|center:black_star_number as range %}
+        {% for _ in range %}
+            <span class="fa fa-star"></span>
+        {% endfor %}
+    {% endwith %}
+
+
+{% endblock %}
+
+{% block content %}
+    <script>
+        $(document).ready(function () {
+            $("#pass").click(function () {
+                $.ajax({
+                    url: "{% url 'course:section-pass' course_slug=current.section.chapter.course.slug chapter_slug=current.section.chapter.slug section_slug=current.section.slug %}",
+                    success: function (result) {
+                        // open feedback modal
+                        $('#feedbackModal').modal('show');
+                    }
+                });
+            });
+
+            $("#closeFeedbackModal").click(function () {
+                location.reload()
+            });
+        });
+
+    </script>
+
+    <div class="modal fade" id="feedbackModal" tabindex="-1" role="dialog" aria-labelledby="FeedbackModel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedbackModalLabel">نظر شما</h5>
+                    <button type="button" class="close" id="closeFeedbackModal" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{% url 'course:section-submit-feedback' course_slug=current.section.chapter.course.slug  chapter_slug=current.section.chapter.slug section_slug=current.section.slug %}"
+                      method="post">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                            {% csrf_token %}
+                            {% for element in feedback_form%}
+                                {% if element.name == "comment" %}
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-sm-3">
+                                                {{ element.label_tag }}
+                                            </div>
+                                            <div >
+                                                {% set_class element 'form-control' %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="form-group">
+                                        <div class="row">
+                                            <div class="col-sm-3">
+                                                {{ element.label_tag }}
+                                            </div>
+                                            <div >
+                                                <fieldset>
+                                                    <input style="display: none;" type="radio" id="no-rate{{forloop.counter0}}" class="input-no-rate" name="{{ element.name }}" value="0" checked aria-label="No rating." />
+                                                    {% with ''|center:max_section_rate as range %}
+                                                        {% for _ in range %}
+                                                            <input style="display: none;" type="radio" id="{{ element.name }}-rate-{{ forloop.counter }}" name="{{ element.name }}" value="{{ forloop.counter }}"/>
+                                                            <label class="base_class rating-{{ element.name }}-{{ forloop.counter }}" for="{{ element.name }}-rate-{{ forloop.counter }}"></label>
+                                                        {% endfor %}
+                                                    {% endwith %}
+                                                </fieldset>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+
+                    </div>
+                    <div class="modal-footer">
+                        {% if next.section %}
+
+                            <a class="btn btn-secondary {% if not next.is_available %} disabled {% endif %}"
+                               role="button"
+                               href="{% url 'course:section-detail' course_slug=current.section.chapter.course.slug  chapter_slug=current.section.chapter.slug section_slug=next.section.slug %}">بعدی</a>
+                        {% endif %}
+                        <button type="submit" class="btn btn-primary">ثبت نظر</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if current.is_available %}
+
+            {{ current.section.content|safe }}
+
+        {% else %}
+            <div class="jumbotron">
+                <h1>این قسمت برای شما موجود نمی باشد</h1>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
+
+
+
+{% block js %}
+
+    <!DOCTYPE html>
+    <head>
+        {% load static %}
+        <script src="{% static 'high_charter/code/highcharts.js' %}"></script>
+    </head>
+
+    <div class="row justify-content-md-center">
+
+        {% if difficulty_grouping %}
+
+            <div id="container"></div>
+            <script>
+
+                Highcharts.setOptions({
+                    colors: ['#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4']
+                });
+                Highcharts.chart('container', {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: 'سختی بخش'
+                    },
+                    plotOptions: {
+                        series: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.name}: %{point.y:.1f}'
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b> of total<br/>'
+                    },
+
+                    "series": [
+                        {
+                            "name": "difficulties",
+                            "colorByPoint": true,
+                            "data": [
+                                {% for k, v in difficulty_grouping.items %}
+                                    {
+                                        "name": '{{ k }}',
+                                        "y": {{ v }},
+                                    },
+                                {% endfor %}
+                            ]
+                        }
+                    ]
+                });
+            </script>
+        {% endif %}
+
+        {% if quality_grouping %}
+            <div id="container2"></div>
+
+            <script>
+
+                Highcharts.setOptions({
+                    colors: ['#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4']
+                });
+                Highcharts.chart('container2', {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: 'کیفیت بخش'
+                    },
+                    plotOptions: {
+                        series: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.name}: %{point.y:.1f}'
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b> of total<br/>'
+                    },
+
+                    "series": [
+                        {
+                            "name": "qualities",
+                            "colorByPoint": true,
+                            "data": [
+                                {% for k, v in quality_grouping.items %}
+                                    {
+                                        "name": '{{ k }}',
+                                        "y": {{ v }},
+                                    },
+                                {% endfor %}
+                            ]
+                        }
+                    ]
+                });
+            </script>
+        {% endif %}
+        <div class="col-md-4">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <p class="font-weight-bold text-center">آمار</p>
+                </div>
+
+                <div class="card-body">
+                    {% if average_difficulty %}
+                        <p class="card-text text-center">{{ average_difficulty }}:متوسط سختی </p>
+                    {% else %}
+                        <p class="card-text text-center">-  :متوسط سختی </p>
+                    {% endif %}
+                    {% if average_quality %}
+                        <p class="card-text text-center">{{ average_quality }}:متوسط کیفیت </p>
+                    {% else %}
+                        <p class="card-text text-center">-  :متوسط کیفیت </p>
+                    {% endif %}
+                    <p class="card-text text-center">{{ passer_count }}:تعداد پاس‌کنندگان </p>
+                </div>
+                <hr>
+                <p class="card-text text-right cke_rtl m-lg-0 font">
+
+                </p>
+            </div>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block footer %}
+    <div class="d-flex justify-content-between fixed-bottom">
+        <div class="p-0">
+            {% if previous.section %}
+                <a class="btn btn-primary {% if not previous.is_available %} disabled {% endif %}" role="button"
+                   href="{% url 'course:section-detail' course_slug=current.section.chapter.course.slug chapter_slug=current.section.chapter.slug section_slug=previous.section.slug %}">قبلی </a>
+            {% endif %}
+        </div>
+        {% if not current.is_passed %}
+            <div class="p-0">
+                <button id="pass" class="btn btn-primary" {% if not current.is_available %} disabled {% endif %}
+                        type="button">
+                    پاس کن !
+                </button>
+            </div>
+        {% endif %}
+        <div class="p-0">
+            {% if next.section %}
+                <a class="btn btn-primary {% if not next.is_available %} disabled {% endif %}" role="button"
+                   href="{% url 'course:section-detail' course_slug=current.section.chapter.course.slug  chapter_slug=current.section.chapter.slug section_slug=next.section.slug %}">بعدی</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
