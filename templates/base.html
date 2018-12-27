@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static '/css/base-style.css' %}">
+    <link rel="stylesheet" href="{% static '/css/bootstrap.css' %}">
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
+            crossorigin="anonymous"></script>
+    <script src="{% static '/js/bootstrap.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+            crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <style>
+        .inactiveLink{
+            cursor: default;
+            pointer-events: none;
+        }
+        .badge{
+            padding: 3px 5px 2px;
+            top: 8px;
+            left: 10px;
+            display: inline-block;
+            min-width: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffffff;
+            line-height: 1;
+            vertical-align: baseline;
+            white-space: nowrap;
+            text-align: right;
+            border-radius: 10px;
+        }
+        .badge-danger {
+            background-color: #db5565;
+        }
+    </style>
+    <title>{% block title %}{% endblock %}</title>
+
+</head>
+<body>
+
+{% block header %}
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="collapse navbar-collapse" id="navbarsExample04">
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="{% url 'course:course_list' %}">خانه <span class="sr-only">(current)</span></a>
+              </li>
+
+            {% block navbar_links %}
+            {% endblock %}
+            </ul>
+        <form class="form-inline my-2 my-md-0">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <button class="btn btn-dark nav-link" formaction="{% url 'notification:notification_inbox' %}">
+                        {% if notifications_count %}
+                            <span class="badge badge-danger"> {{ notifications_count }}</span>
+                        {% endif %}
+                        <img style="background-color: #6c757d" class="rounded" src="{% static 'images/notification.png' %}" width="25" height="25">
+                    </button>
+                </li>
+                <li class="nav-item dropdown dropleft">
+                    <img class="rounded nav-link dropdown-toggle" id="dropdown04" aria-haspopup="true" style="cursor: pointer" aria-expanded="false" data-toggle="dropdown" src="{{ student_profile_picture_url }}" width="40" height="40">
+                <div class="dropdown-menu" aria-labelledby="dropdown04" id="dropdownitems">
+                    <p class="dropdown-item-text">{{ student_username }}</p>
+                  <a class="dropdown-item" href="#">پروفایل</a>
+                  <a class="dropdown-item" href="#">تنظیمات</a>
+                  <a class="dropdown-item" href="/accounts/logout/">خروج</a>
+                </div>
+              </li>
+            </ul>
+        </form>
+      </div>
+    </nav>
+{% endblock %}
+
+{% block rating %}
+{% endblock %}
+
+{% block content %}
+{% endblock %}
+
+<footer class="footer">
+    <div class="container">
+        {% block footer %}
+        {% endblock %}
+    </div>
+</footer>
+
+{% block js %}
+{% endblock %}
+</body>
+
+</html>

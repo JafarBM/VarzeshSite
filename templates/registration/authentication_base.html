@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static '/css/base-style.css' %}">
+    <link rel="stylesheet" href="{% static '/css/bootstrap.css' %}">
+    <link rel="stylesheet" href="{% static '/auth_base.css' %}">
+    <script src="{% static '/js/bootstrap.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+            crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+
+</head>
+<body class="text-center">
+
+{% block header %}
+{% endblock %}
+
+<div class="wrapper h-100">
+    <!-- Sidebar  -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>کافه گولنگ</h3>
+        </div>
+
+        <ul class="list-unstyled components">
+
+            {% if user.is_authenticated %}
+                <p> {{ user.get_username }} خوش آمدید</p>
+            {% endif %}
+            <li><a href="{% url 'course:course_list' %}">خانه</a></li>
+            {% if user.is_authenticated %}
+                <li><a href="/accounts/logout?next={{ request.path }}">خروج از سیستم</a></li>
+            {% else %}
+                <li><a href="/accounts/login?next={{ request.path }}">ورود به سیستم</a></li>
+            {% endif %}
+            <li><a href="/admin/">صفحه ادمین</a></li>
+
+        </ul>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+</div>
+
+<footer class="footer">
+    <div class="container">
+        {% block footer %}
+        {% endblock %}
+    </div>
+</footer>
+
+
+</body>
+</html>

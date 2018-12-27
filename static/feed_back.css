@@ -1,0 +1,23 @@
+input[type="radio"]:checked+label {
+    border: 1px dashed black;
+    border-radius: 0%;
+}
+
+.base_class{
+    /*background-image: url("images/emoji/difficulty-1.svg");*/
+    background-color: white;
+	width: 40px;
+	height: 40px;
+	background-repeat: no-repeat;
+	bottom: 0;
+	left: 0;
+    border: 1px dashed white;
+    border-radius: 0%;
+}
+
+.rating-difficulty-1{background-image: url("images/emoji/difficulty-1.svg");}
+.rating-difficulty-2{background-image: url("images/emoji/difficulty-2.svg");}
+.rating-difficulty-3{background-image: url("images/emoji/difficulty-3.svg");}
+.rating-quality-1{background-image: url("images/emoji/quality-1.svg");}
+.rating-quality-2{background-image: url("images/emoji/quality-2.svg");}
+.rating-quality-3{background-image: url("images/emoji/quality-3.svg");}

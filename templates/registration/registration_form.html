@@ -1,0 +1,19 @@
+{% extends "registration/authentication_base.html" %}
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}ثبت نام{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static '/signin.css' %}">
+
+    <form method="post" action="." class="form-signin">
+        <h1 align="center">ثبت نام در سایت</h1>
+        {% csrf_token %}
+        {% for element in form %}
+            {% render_field element class='form-control' id=element.name placeholder=element.label %}
+            <small class="form-text text-warning">{{ element.errors }}</small>
+        {% endfor %}
+        <button type="submit" class="btn btn-lg btn-primary btn-block">ثبت نام</button>
+    </form>
+{% endblock %}
