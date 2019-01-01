@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block page_title %} بازآکادمی | {{ course.title }} {% endblock %}
+{% load course_extra %}
+
+{% block content %}
+    <div class="container">
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">لیست دانش آموزان درس</h1>
+                <p class="lead text-muted"> .در این صفحه می توانید وضعیت دانش آموزان درس موردنظر را مشاهده کنید</p>
+            </div>
+        </section>
+    </div>
+     <main role="main" class="container text-right">
+        <div id="accordion">
+            {% for enrollment in enrollments %}
+                <p>{{ enrollment.count }}</p>
+                <div class="card">
+                    <div class="card-header" id="heading{{ enrollment.student.member.id }}">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link" data-toggle="collapse" data-target="#collapse{{ enrollment.student.member.id }}"
+                                    aria-expanded="true" aria-controls="collapse{{ enrollment.student.member.id }}">
+                                {{ enrollment.student.member.username }}
+                            </button>
+                        </h5>
+                    </div>
+
+                    <div id="collapse{{ enrollment.student.member.id }}" class="collapse" aria-labelledby="heading{{ enrollment.student.member.id }}"
+                         data-parent="#accordion">
+                        <div class="list-group list-group-flush">
+                            <div class="card-body">
+                                <ul>
+                                    <li class="list-group-item">
+
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-striped bg-info"
+                                                 role="progressbar" style="width: {{ enrollment.get_course_passed_sections_progress }}%"
+                                                 aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                                                {{ enrollment.get_course_passed_sections_progress }}
+                                            </div>
+                                        </div>
+
+
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        روز های سپری شده پس از ثبت نام :‌ {{ enrollment.get_elapsed_days_time_since_enroll }}
+                                    </li>
+
+                                    <li class="list-group-item">
+                                        در {{ course|get_student_rank:enrollment }} درصد بالای دانش آموزان است
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+
+
+{% endblock %}

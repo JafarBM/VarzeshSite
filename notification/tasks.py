@@ -11,7 +11,4 @@ def celery_send_mail(subject, text, to):
 
 
 def send_mail(subject, text, to):
-    if settings.CELERY_ALWAYS_EAGER:
-        celery_send_mail(subject, text, to)
-    else:
-        return celery_send_mail.delay(subject, text, to)
+    return celery_send_mail.delay(subject, text, to)

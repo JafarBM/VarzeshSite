@@ -1,9 +1,10 @@
 from django.test import Client, TransactionTestCase
 
-from course.models import Course, Enrollment
-from course.tests.factories import CourseFactory, ChapterFactory, SectionFactory, EnrollmentFactory, CategoryFactory, \
-    TagFactory, EnrollmentSectionPassFactory
-from member.tests.factories import MemberFactory, StudentFactory
+from course.models import Course, Enrollment, TagScore
+from course.tests.factories import CourseFactory, ChapterFactory, SectionFactory, CategoryFactory, \
+    TagFactory, RecommendationTagFactory
+from exercise.tests.factories import ProblemFactory
+from member.tests.factories import MemberFactory
 
 
 class TestCourse(TransactionTestCase):
@@ -14,10 +15,10 @@ class TestCourse(TransactionTestCase):
         chapter_1_2 = ChapterFactory(order=1, course=course1)
         chapter_2_1 = ChapterFactory(order=0, course=course2)
         chapter_2_2 = ChapterFactory(order=1, course=course2)
-        section_1_1_1 = SectionFactory(order=0, chapter=chapter_1_1)
-        section_1_1_2 = SectionFactory(order=1, chapter=chapter_1_1)
-        section_2_1_1 = SectionFactory(order=0, chapter=chapter_2_1)
-        section_2_1_2 = SectionFactory(order=1, chapter=chapter_2_1)
+        section_1_1_1 = SectionFactory(order=0, chapter=chapter_1_1, problem=ProblemFactory.create(course=course1))
+        section_1_1_2 = SectionFactory(order=1, chapter=chapter_1_1, problem=ProblemFactory.create(course=course1))
+        section_2_1_1 = SectionFactory(order=0, chapter=chapter_2_1, problem=ProblemFactory.create(course=course2))
+        section_2_1_2 = SectionFactory(order=1, chapter=chapter_2_1, problem=ProblemFactory.create(course=course2))
         self.assertEqual(Course.objects.count(), 2)
         self.assertEqual(course1.chapter_set.count(), 2)
         self.assertEqual(chapter_1_1.sections.count(), 2)
@@ -55,20 +56,20 @@ class TestCourse(TransactionTestCase):
         chapter_1_1 = ChapterFactory(order=0, course=course1)
         chapter_1_2 = ChapterFactory(order=1, course=course1)
         section_1_1_1 = SectionFactory(order=0, chapter=chapter_1_1)
-        section_1_1_2 = SectionFactory(order=1, chapter=chapter_1_1)
-        section_1_2_1 = SectionFactory(order=0, chapter=chapter_1_2)
-        section_1_2_2 = SectionFactory(order=1, chapter=chapter_1_2)
-        enrollment = course1.enroll(student)
-        EnrollmentSectionPassFactory(enrollment=enrollment, section=section_1_1_1)
+        SectionFactory(order=1, chapter=chapter_1_1)
+        SectionFactory(order=0, chapter=chapter_1_2)
+        SectionFactory(order=1, chapter=chapter_1_2)
+        course1.enroll(student)
+        section_1_1_1.pass_for_student(student)
         c = Client()
         c.login(username='username', password='havijbastani1')
         response = c.get('/courses/')
         courses = response.context['courses']
-        course1_progress = courses[course1]['progress']
+        course1_progress = courses[0].get_course_progress(student)
         self.assertEqual(course1_progress, 25)
 
     def test_course_lock(self):
-        MemberFactory(username='username', password='havijbastani1', is_student=True)
+        member = MemberFactory(username='username', password='havijbastani1', is_student=True)
         course1 = CourseFactory()
         course2 = CourseFactory(preconditions=(course1,))
 
@@ -77,8 +78,8 @@ class TestCourse(TransactionTestCase):
         response = c.get('/courses/')
         courses = response.context['courses']
 
-        course1_lock = courses[course1]['is_locked']
-        course2_lock = courses[course2]['is_locked']
+        course1_lock = courses[0].is_lock(student=member.student)
+        course2_lock = courses[1].is_lock(student=member.student)
 
         self.assertEqual(course1_lock, False)
         self.assertEqual(course2_lock, True)
@@ -126,15 +127,15 @@ class TestCourse(TransactionTestCase):
 
         response = c.get('/courses/')
         courses = response.context['courses']
-        course1_can_enroll = courses[course1]['can_enroll']
-        self.assertEqual(course1_can_enroll, True)
+        can_enroll = False if Enrollment.objects.filter(course=courses[0], student=member.student) else True
+        self.assertEqual(can_enroll, True)
 
         course1.enroll(member.student)
 
         response = c.get('/courses/')
         courses = response.context['courses']
-        course1_can_enroll = courses[course1]['can_enroll']
-        self.assertEqual(course1_can_enroll, False)
+        can_enroll = False if Enrollment.objects.filter(course=courses[0], student=member.student) else True
+        self.assertEqual(can_enroll, False)
 
     def test_get_tags(self):
         MemberFactory(username='username', password='havijbastani1', is_student=True)
@@ -146,12 +147,11 @@ class TestCourse(TransactionTestCase):
         chapter1 = ChapterFactory(course=course1)
         SectionFactory(chapter=chapter1, tags=(tag0, tag1))
         SectionFactory(chapter=chapter1, tags=(tag0, tag2))
-
         c = Client()
         c.login(username='username', password='havijbastani1')
         response = c.get('/courses/')
         courses = response.context['courses']
-        tags = courses[course1]['tags']
+        tags = courses[0].get_tags()
         self.assertEqual(len(tags), 3)
 
     def test_course_is_finished(self):
@@ -174,6 +174,86 @@ class TestCourse(TransactionTestCase):
         client = Client()
         client.login(username='username', password='havijbastani1')
         response = client.get('/courses/' + course1.slug + '/chapters/')
-        self.assertIsNot(None, response.context['professor_picture_url'])
-        self.assertIsNot(None, response.context['professor_description'])
-        self.assertIsNot(None, response.context['professor_name'])
+        self.assertIsNot(None, response.context['professor'].get_profile_picture_url)
+        self.assertIsNot(None, response.context['professor'].description)
+        self.assertIsNot(None, response.context['professor'].member.username)
+
+    def test_slug(self):
+        slug = "my-slug"
+        slug2 = "my-slug2"
+        member = MemberFactory(username='username', password='havijbastani1', is_student=True)
+        course1 = CourseFactory(title="course title", slug=slug)
+        self.assertEqual(course1.slug, slug)
+        course1.slug = slug2
+        course1.save()
+        self.assertEqual(course1.slug, slug2)
+        course2 = CourseFactory(title="title 1")
+        self.assertEqual(course2.slug, "title-1")
+        course2.title = "new title 1"
+        course2.save()
+        self.assertEqual(course2.title, "new title 1")
+        self.assertEqual(course2.slug, "title-1")
+
+    def test_recommendation(self):
+        member = MemberFactory(username='username', password='havijbastani1', is_student=True)
+        course1 = CourseFactory()
+        chapter1_1 = ChapterFactory(course=course1)
+        tag1 = RecommendationTagFactory()
+        tag2 = RecommendationTagFactory()
+        section1_1_1 = SectionFactory(chapter=chapter1_1, problem=ProblemFactory.create(course=course1))
+        section1_1_1.recommendation_tags.set([tag1, tag2])
+        c = Client()
+        c.login(username='username', password='havijbastani1')
+        response = c.get('/courses/recommendation/')
+        courses = response.context['courses']
+        self.assertEqual(len(courses), 1)
+        course2 = CourseFactory()
+        chapter2_1 = ChapterFactory(course=course2)
+        section2_1_1 = SectionFactory(chapter=chapter2_1, problem=ProblemFactory.create(course=course2))
+        section2_1_1.recommendation_tags.set([tag1, tag2])
+        response = c.get('/courses/recommendation/')
+        courses = response.context['courses']
+        self.assertEqual(len(courses), 2)
+        course1.enroll(member.student)
+        c.get('/courses/{course_slug}/chapters/{chapter_slug}/sections/{section_slug}/pass'.
+              format(course_slug=course1.slug, chapter_slug=chapter1_1.slug,
+                     section_slug=section1_1_1.slug))
+        response = c.get('/courses/recommendation/')
+        courses = response.context['courses']
+        self.assertEqual(len(courses), 1)
+        course3 = CourseFactory(preconditions=(course2,))
+        chapter3_1 = ChapterFactory(course=course3)
+        section3_1_1 = SectionFactory(chapter=chapter3_1, problem=ProblemFactory.create(course=course2))
+        response = c.get('/courses/recommendation/')
+        courses = response.context['courses']
+        self.assertEqual(len(courses), 1)
+
+    def test_tagscore(self):
+        member = MemberFactory(username='username', password='havijbastani1', is_student=True)
+        tag0 = RecommendationTagFactory()
+        tag1 = RecommendationTagFactory()
+        tag2 = RecommendationTagFactory()
+        tag3 = RecommendationTagFactory()
+        course1 = CourseFactory()
+        chapter1_1 = ChapterFactory(course=course1)
+        section1_1_1 = SectionFactory(chapter=chapter1_1)
+        section1_1_1.recommendation_tags.set([tag0, tag2, tag3])
+        c = Client()
+        c.login(username='username', password='havijbastani1')
+        course1.enroll(member.student)
+        section1_1_1.pass_for_student(member.student)
+        self.assertEqual(TagScore.objects.get(tag=tag2, student=member.student).score, 1)
+        course2 = CourseFactory()
+        chapter2_1 = ChapterFactory(course=course2)
+        section2_1_1 = SectionFactory(chapter=chapter2_1)
+        section2_1_1.recommendation_tags.set([tag1, tag2])
+        section2_1_2 = SectionFactory(chapter=chapter2_1)
+        section2_1_2.recommendation_tags.set([tag1, tag3])
+        course2.enroll(member.student)
+        section2_1_1.pass_for_student(member.student)
+        self.assertEqual(TagScore.objects.get(tag=tag2, student=member.student).score, 1)
+        section2_1_2.pass_for_student(member.student)
+        self.assertEqual(TagScore.objects.get(tag=tag0, student=member.student).score, 1)
+        self.assertEqual(TagScore.objects.get(tag=tag1, student=member.student).score, 1)
+        self.assertEqual(TagScore.objects.get(tag=tag2, student=member.student).score, 2)
+        self.assertEqual(TagScore.objects.get(tag=tag3, student=member.student).score, 2)

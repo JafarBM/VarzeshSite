@@ -1,57 +1,44 @@
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.http import JsonResponse
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils import timezone
 
 from course import utils
-from course.constants import MAX_SECTION_RATE
-from course.utils import is_student_check, add_navbar_data_context
-from notification.utils import new_notification_check
+from course.decorators import is_student_check, is_teacher_check
 from .forms import FeedbackForm
 from .models import Course, Section, Enrollment, Category, EnrollmentSectionPass, Feedback
 from .models import SectionEnrollment
+from .recommendation import get_recommendations
+
+
+@login_required
+@user_passes_test(test_func=is_student_check)
+def recommendation(request):
+    student = request.user.student
+    courses = get_recommendations(student)
+
+    context = dict()
+    context['courses'] = [course for course in courses]
+    context['categories'] = Category.objects.all()
+
+    return render(
+        request=request,
+        template_name='course/course_list.html',
+        context=context,
+    )
 
 
 @login_required
 @user_passes_test(test_func=is_student_check)
 def course_list(request):
-    courses = Course.objects.all()
-    student = request.user.student
-    enrollments = Enrollment.objects.filter(student=student)
-
+    courses = Course.objects.prefetch_related('preconditions').all()
     category_id = request.GET.get('category_id', None)
-
     if category_id:
-        courses = Course.objects.filter(categories__in=[category_id])
-        enrollments = enrollments.filter(course__categories__in=[category_id])
-
-    courses_progress = {}
-    courses_lock = {}
-    can_enroll = {}
-    tags = {}
-    covers = {}
-
-    for course in courses:
-        courses_progress[course] = 0
-        can_enroll[course] = True
-        courses_lock[course] = course.is_lock(student)
-        tags[course] = course.get_tags()
-        covers[course] = course.cover_url()
-
-    for enrollment in enrollments:
-        courses_progress[enrollment.course] = enrollment.get_course_passed_sections_progress()
-        can_enroll[enrollment.course] = False
-
-    context = {"courses": utils.merge_dictionaries(
-        progress=courses_progress, is_locked=courses_lock, can_enroll=can_enroll, tags=tags),
-        "categories": Category.objects.all(),
-    }
-    context = add_navbar_data_context(student_username=request.user.username,
-                                      notification_count=new_notification_check(student),
-                                      student=student,
-                                      context=context)
+        courses = courses.filter(categories__in=[category_id])
+    context = dict()
+    context['courses'] = [course for course in courses]
+    context['categories'] = Category.objects.all()
 
     return render(
         request=request,
@@ -73,26 +60,25 @@ def course_enroll(request, course_slug):
 @user_passes_test(test_func=is_student_check)
 def chapter_list(request, course_slug):
     student = request.user.student
-    enrollment = get_object_or_404(Enrollment, student=student, course__slug=course_slug)
+    enrollment = get_object_or_404(
+        Enrollment.objects.select_related('course', 'student', 'course__professor',
+                                          'course__professor__member').prefetch_related('passed_sections'),
+        student=student,
+        course__slug=course_slug)
     chapters_progress = enrollment.get_chapter_passed_sections_progress()
+    for key, value in chapters_progress.items():
+        chapters_progress[key] = int(value)
+    professor = enrollment.course.professor
     chapters_lock = {}
 
     for chapter in chapters_progress:
-        chapters_lock[chapter] = chapter.is_lock(student)
+        chapters_lock[chapter] = chapter.is_lock(student, chapters_progress)
 
     context = {"chapters": utils.merge_dictionaries(progress=chapters_progress, is_locked=chapters_lock),
-               "started_date": enrollment.start_date,
-               "is_finished": enrollment.course.is_finished(student),
-               "professor_description": enrollment.course.professor.description,
-               "professor_picture_url": enrollment.course.professor.get_profile_picture_url(),
-               "professor_name": enrollment.course.professor.member.username,
-               "current_course_link": "/courses/" + course_slug + "/chapters/",
-               "course": enrollment.course,
+               "enrollment": enrollment,
+               "professor": professor,
+               "is_finished": enrollment.course.is_finished(student, chapters_progress=chapters_progress),
                }
-    context = add_navbar_data_context(student_username=request.user.username,
-                                      notification_count=new_notification_check(student),
-                                      student=student,
-                                      context=context)
     return render(
         request=request,
         template_name='course/chapter_list.html',
@@ -104,76 +90,51 @@ def chapter_list(request, course_slug):
 @user_passes_test(test_func=is_student_check)
 def section_detail_view(request, course_slug, chapter_slug, section_slug):
     student = request.user.student
-    enrollment = get_object_or_404(Enrollment, student=student, course__slug=course_slug)
-    section = get_object_or_404(Section, chapter__course__slug=course_slug,
+    enrollment = get_object_or_404(
+        Enrollment.objects.select_related('course', 'student'),
+        student=student,
+        course__slug=course_slug)
+    section = get_object_or_404(Section.objects.select_related('chapter', 'chapter__course'),
+                                chapter__course__slug=course_slug,
                                 chapter__slug=chapter_slug, slug=section_slug)
-
-    data = {'current': section,
-            'next': section.get_next_section(),
-            'previous': section.get_previous_section()}
-
-    context = {}
-    for k, v in data.items():
-        context[k] = {'section': v, 'is_available': False if v is None else enrollment.is_section_available(v),
-                      'is_passed': False if v is None else enrollment.passed_sections.filter(slug=v.slug).count() > 0,
-                      }
 
     try:
         enrollment_section = SectionEnrollment.objects.get(student=student, section=section)
-        current_time = timezone.now()
-        if enrollment_section.started_time > current_time:
-            enrollment_section.started_time = current_time
-            enrollment_section.save()
-        context['started_time'] = enrollment_section.started_time
+        enrollment_section.set_start_time()
     except SectionEnrollment.DoesNotExist:
         pass
-    context['is_finished'] = section.is_finished(student=student)
-    context['orange_star_number'] = section.admin_rate
-    context['black_star_number'] = MAX_SECTION_RATE - section.admin_rate
-    context['max_section_rate'] = MAX_SECTION_RATE
 
-    context['feedback_form'] = FeedbackForm()
-
-    context['average_difficulty'] = section.get_average_difficulty()
-    context['average_quality'] = section.get_average_quality()
-    context['passer_count'] = section.get_passer_count()
-    feedbacks_count = section.get_feedbacks_count()
-    context['feedback_count'] = feedbacks_count
-    # TODO average_time_spent, starter_cnt
-    context['average_time_spent'] = 0
-    difficulty_grouping = section.get_difficulty_grouping()
-    quality_grouping = section.get_quality_grouping()
-
-    context['difficulty_grouping'] = 0
-    context['quality_grouping'] = 0
-
-    context["current_course_link"] = "/courses/" + course_slug + "/chapters/"
-    context = add_navbar_data_context(student_username=request.user.username,
-                                      notification_count=new_notification_check(student),
-                                      student=student,
-                                      context=context)
-
-    if feedbacks_count != 0:
-        context['difficulty_grouping'] = {k: 100.0 * v / feedbacks_count for k, v in difficulty_grouping.items()}
-        context['quality_grouping'] = {k: 100.0 * v / feedbacks_count for k, v in quality_grouping.items()}
-
+    context = {'student': student, 'enrollment': enrollment, 'section': section,
+               'next_section': section.get_next_section(), 'previous_section': section.get_previous_section(),
+               'enrollment_section': enrollment_section, 'feedback_form': FeedbackForm()}
     return render(request, 'course/section-detail.html', context=context)
 
 
 @login_required
 @user_passes_test(test_func=is_student_check)
-def section_pass_view(request, course_slug, chapter_slug, section_slug):
+def section_unlock(request, course_slug, chapter_slug, section_slug):
     student = request.user.student
-    enrollment = get_object_or_404(Enrollment, student=student, course__slug=course_slug)
+    student_credit = student.compute_credit()
+
     section = get_object_or_404(Section, chapter__course__slug=course_slug,
                                 chapter__slug=chapter_slug, slug=section_slug)
+    section_credit = section.credit
+    enrollment = get_object_or_404(Enrollment, student=student, course__slug=course_slug)
 
-    data = {'passed': False}
-    if enrollment.is_section_available(section):
-        section.pass_for_student(student)
-        data['passed'] = True
-
-    return JsonResponse(data)
+    if enrollment.is_section_available(section) or enrollment.has_used_credit(section):
+        return redirect(reverse('course:section-detail', args=[course_slug, chapter_slug, section_slug]))
+    elif section_credit > student_credit:
+        return render(
+            request=request,
+            template_name="course/insufficient_credit_course.html"
+        )
+    else:
+        try:
+            section.credit_logs.create(student=student, credit=-section_credit)
+            enrollment.unlocked_sections.add(section)
+            return redirect(reverse('course:section-detail', args=[course_slug, chapter_slug, section_slug]))
+        except IntegrityError:
+            return redirect(reverse('course:section-detail', args=[course_slug, chapter_slug, section_slug]))
 
 
 @login_required
@@ -201,3 +162,32 @@ def section_submit_feedback(request, course_slug, chapter_slug, section_slug):
                     return redirect(reverse('course:chapter_list', args=[course_slug]))
 
     return redirect(reverse('course:section-detail', args=[course_slug, chapter_slug, section_slug]))
+
+
+@login_required
+@user_passes_test(test_func=is_teacher_check)
+def student_progress_list(request, course_slug):
+    professor = request.user.professor
+    try:
+        course = Course.objects.get(slug=course_slug, professor=professor)
+        context = {
+            'course': course,
+            'enrollments': Enrollment.objects.select_related('student').prefetch_related('passed_sections').filter(
+                course=course)}
+        return render(request, 'course/student-progress-list.html', context=context)
+    except Course.DoesNotExist:
+        return render(request,
+                      "base.html",
+                      context={"error": '!شما مدرس این درس نمی باشید'},
+                      status=403)
+
+
+@login_required
+@user_passes_test(test_func=is_student_check)
+def statistic_view(request, section_id):
+    section = get_object_or_404(Section.objects.select_related('chapter', 'chapter__course'), id=section_id)
+    return render(request, 'course/statistics_detail.html', context={"section": section})
+
+
+def home(request):
+    return render(request, 'base.html')

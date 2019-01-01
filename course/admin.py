@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from course.models import TagScore, RecommendationTag
 from .models import Course, Chapter, Section, Category, Tag, Enrollment, EnrollmentSectionPass, Feedback
 from .models import SectionEnrollment
 
@@ -38,3 +39,5 @@ admin.site.register(Enrollment)
 admin.site.register(Feedback)
 admin.site.register(EnrollmentSectionPass)
 admin.site.register(SectionEnrollment)
+admin.site.register(TagScore)
+admin.site.register(RecommendationTag)

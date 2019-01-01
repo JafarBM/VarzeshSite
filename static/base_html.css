@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'bkoodak';
+    src: url('BKoodakBold_0.ttf') format("truetype"),
+    local('bkoodak');
+}
+
+body {
+    font-family: bkoodak;
+}

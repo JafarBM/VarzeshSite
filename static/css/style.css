@@ -1,0 +1,297 @@
+@font-face {
+    font-family: IRANSans-web;
+    src: url(../fonts/IRANSans-Bold-web.eot);
+    src: url(../fonts/IRANSans-Bold-web.eot?#iefix) format("eot"),
+    url(../fonts/IRANSans-Bold-web.woff2) format("woff2"),
+    url(../fonts/IRANSans-Bold-web.woff) format("woff"),
+    url(../fonts/IRANSans-Bold-web.ttf) format("ttf");
+    font-weight: 700
+}
+
+@font-face {
+    font-family: IRANSans-web;
+    src: url(../fonts/IRANSans-Medium-web.eot);
+    src: url(../fonts/IRANSans-Medium-web.eot?#iefix) format("eot"),
+    url(../fonts/IRANSans-Medium-web.woff2) format("woff2"),
+    url(../fonts/IRANSans-Medium-web.woff) format("woff"),
+    url(../fonts/IRANSans-Medium-web.ttf) format("ttf");
+    font-weight: 500
+}
+
+@font-face {
+    font-family: IRANSans-web;
+    src: url(../fonts/IRANSans-UltraLight-web.eot);
+    src: url(../fonts/IRANSans-UltraLight-web.eot?#iefix) format("eot"),
+    url(../fonts/IRANSans-UltraLight-web.woff2) format("woff2"),
+    url(../fonts/IRANSans-UltraLight-web.woff) format("woff"),
+    url(../fonts/IRANSans-UltraLight-web.ttf) format("ttf");
+    font-weight: 200
+}
+
+@font-face {
+    font-family: IRANSans-web;
+    src: url(../fonts/IRANSans-Light-web.eot);
+    src: url(../fonts/IRANSans-Light-web.eot?#iefix) format("eot"),
+    url(../fonts/IRANSans-Light-web.woff2) format("woff2"),
+    url(../fonts/IRANSans-Light-web.woff) format("woff"),
+    url(../fonts/IRANSans-Light-web.ttf) format("ttf");
+    font-weight: 300
+}
+
+@font-face {
+    font-family: IRANSans-web;
+    src: url(../fonts/IRANSans-web.eot);
+    src: url(../fonts/IRANSans-web.eot?#iefix) format("eot"),
+    url(../fonts/IRANSans-web.woff2) format("woff2"),
+    url(../fonts/IRANSans-web.woff) format("woff"),
+    url(../fonts/IRANSans-web.ttf) format("ttf");
+    font-weight: 400
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Roboto', IRANSans-web, sans-serif;
+    margin-bottom: 60px;
+}
+
+body > main {
+    padding-top: 7rem;
+    padding-bottom: 3rem;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+}
+
+.quiz-problem-unsolved, .quiz-problem-unsolved a {
+    color: #4c6b9a;
+}
+
+.quiz-problem-unsolved::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f111";
+}
+
+.list-group-item.quiz-problem-unsolved {
+    background-color: white;
+}
+
+.quiz-problem-correct, .quiz-problem-correct a {
+    color: #1e7e34;
+}
+
+.quiz-problem-correct::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f058";
+}
+
+.list-group-item.quiz-problem-correct {
+    background-color: #a5eab3;
+}
+
+.quiz-problem-wrong, .quiz-problem-wrong a {
+    color: #8b0000;
+}
+
+.quiz-problem-wrong::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f057";
+}
+
+.list-group-item.quiz-problem-wrong {
+    background-color: #f3afb7;
+}
+
+.footer-distributed {
+    direction: rtl;
+    width: 100%;
+    background-color: #292c2f;
+    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.12);
+    box-sizing: border-box;
+    font: normal 16px inherit;
+
+    padding: 10px 50px;
+}
+
+.footer-distributed .footer-left p {
+    text-align: left;
+    color: #8f9296;
+    font-size: 14px;
+    margin-top: 0;
+}
+
+/* Footer links */
+
+.footer-distributed p.footer-links {
+    float: left;
+    font-size: 16px;
+    color: #ffffff;
+}
+
+.footer-distributed p.footer-links a {
+    display: inline-block;
+    line-height: 1.8;
+    text-decoration: none;
+    color: inherit;
+}
+
+.footer-distributed .footer-right {
+    text-align: right;
+    float: right;
+    max-width: 180px;
+}
+
+.footer-distributed .footer-center {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 14px;
+    color: #9fcdff;
+}
+
+.footer-distributed .footer-right a {
+    display: inline-block;
+    width: 35px;
+    height: 35px;
+    background-color: #3338003b;
+    border-radius: 2px;
+
+    font-size: 20px;
+    color: #ffffff;
+    text-align: center;
+    line-height: 35px;
+
+    margin-left: 3px;
+}
+
+.input-load pre, .output-load pre {
+    height: 0;
+}
+
+.input-load div, .output-load div {
+    overflow: auto;
+    max-height: 500px;
+    direction: ltr;
+}
+
+#testCases .card-header div {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.dropdown-menu {
+    text-align: right;
+}
+
+.dropdown-menu .dropdown-item, .dropdown-item-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-menu .dropdown-item .badge {
+    margin-right: 1em;
+}
+
+.dropleft .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    flex-direction: row-reverse;
+}
+
+.navbar-nav > li > .badge {
+    position: absolute;
+}
+
+.navbar-brand {
+    font-weight: 700;
+}
+
+.dropdown-item .fa {
+    margin: 0.25em;
+}
+
+.submission-message > div {
+    display: none;
+    margin: 1em;
+}
+
+.CodeMirror {
+    height: auto;
+    border: 2px solid #ddd;
+    direction: ltr;
+    text-align: left;
+}
+
+.CodeMirror pre {
+    padding-left: 7px;
+    line-height: 1.25;
+}
+
+.preloader {
+    text-align: center;
+    opacity: 0;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item + .breadcrumb-item {
+    padding-right: .5rem;
+    padding-left: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    padding-right: 0;
+    padding-left: .5rem;
+}
+
+.custom-file-label::after {
+    left: 0;
+    right: auto;
+    border-right: 1px solid #ced4da;
+    border-left: none;
+    border-radius: .25rem 0 0 .25rem;
+}
+
+.custom-select {
+    padding-right: .75rem;
+    padding-left: 1.75rem;
+    background-position: left .75rem center;
+}
+
+.profile-picture {
+    object-fit: cover;
+}
+
+.custom-control-label::before {
+    left: auto;
+    right: -1.5rem;
+}
+
+.course-title {
+    position: absolute;
+    width: 100%;
+    color: #ffffff;
+    background-color: rgba(0, 0, 0, 0.5);
+    bottom: 0;
+}
+
+.course-image {
+    position: relative;
+    overflow: hidden;
+}
+
+

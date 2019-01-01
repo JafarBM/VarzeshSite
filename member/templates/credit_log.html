@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load jformat %}
+{% block page_title %}
+    امتیازات
+{% endblock %}
+{% block content %}
+
+    <h2>لیست همه ی امتیازات</h2>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>شماره</th>
+            <th>نوع</th>
+            <th>عنوان</th>
+            <th>زمان</th>
+            <th>مقدار</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for log in logs %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ log.content_type }}</td>
+                <td>{{ log.content_object }}</td>
+                <td>{{ log.date|jformat:"%A %d %B %Y %H:%M" }}</td>
+                <td>{{ log.credit }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

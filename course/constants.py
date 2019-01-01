@@ -1,5 +1,3 @@
-from django.conf import settings
-
 FULL_PROGRESS = 100
 NULL_PROGRESS = 0
 
@@ -23,5 +21,8 @@ RATE_CHOICES = [
     (2, 'متوسط'),
     (3, 'سخت')
 ]
-NO_PROFILE_IMAGE_URL = settings.STATIC_URL + 'images/1024px-No_image_available.svg.png'
+NO_PROFILE_IMAGE_URL = 'images/1024px-No_image_available.svg.png'
 MEMBER_UPLOAD_PICTURES = "member_gallery/"
+DIGITS_AFTER_DECIMAL = 3
+NUMBER_OF_RECOMMEND = 5
+MINIMUM_SCORE_FOR_RECOMMEND = 0

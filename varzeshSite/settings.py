@@ -31,6 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'registration',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -38,10 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'notifications',
+    'django_jalali',
 
+    'notifications',
     'widget_tweaks',
-    'registration',
 
     'django_celery_beat',
     'django_celery_results',
@@ -51,6 +53,8 @@ INSTALLED_APPS = [
     'notification',
     'ckeditor',
     'ckeditor_uploader',
+
+    'private_storage',
 ]
 
 MIDDLEWARE = [
@@ -76,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'course.context_processor.add_nav_bar_details',
             ],
         },
     },
@@ -128,6 +133,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
+PRIVATE_STORAGE_ROOT = '/private-media/'
+
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
@@ -137,9 +145,6 @@ STATICFILES_DIRS = [
 ]
 
 AUTH_USER_MODEL = 'member.Member'
-
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-MEDIA_URL = '/media/'
 
 CKEDITOR_UPLOAD_PATH = 'uploads/'
 CKEDITOR_IMAGE_BACKEND = "pillow"

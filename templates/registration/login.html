@@ -1,24 +1,21 @@
-{% extends "registration/authentication_base.html" %}
+{% extends 'base.html' %}
 {% load widget_tweaks %}
-{% load static %}
 
-{% block title %}ورود{% endblock %}
+{% block page_title %}
+    ورود
+{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static '/signin.css' %}">
-    <form method="post" action="." class="form-signin">
-        <h3 class="h3 mb-3 font-weight-normal">ورود به حساب</h3>
-
-        {% csrf_token %}
-        {% for element in form %}
-            {% render_field element class='form-control' id=element.name placeholder=element.label %}
-            <small class="form-text text-warning">{{ element.errors }}</small>
-        {% endfor %}
-        <button type="submit" class="btn btn-lg btn-primary btn-block">ورود</button>
-        <h6 class="h6 mb-3 font-weight-normal ">عضو نیستید آیا؟ <a class="text-primary"
-                                                                   href="{% url 'registration_register' %}">عضویت</a>
-        </h6>
-
-    </form>
-
+    <div class="container">
+        <div class="row justify-content-md-center">
+            <div class="col-sm-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% include 'bootstrap_form.html' with form=form %}
+                    <button type="submit" class="btn btn-primary">ورود</button>
+                    <a class="float-left" href="{% url 'auth_password_reset' %}">فراموشی رمز عبور</a>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endblock %}

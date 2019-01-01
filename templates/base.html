@@ -2,96 +2,191 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" type="text/css" href="{% static '/css/base-style.css' %}">
-    <link rel="stylesheet" href="{% static '/css/bootstrap.css' %}">
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
-            integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT"
-            crossorigin="anonymous"></script>
-    <script src="{% static '/js/bootstrap.js' %}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
-            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
-            crossorigin="anonymous"></script>
+
+
     <meta charset="UTF-8">
-    <style>
-        .inactiveLink{
-            cursor: default;
-            pointer-events: none;
-        }
-        .badge{
-            padding: 3px 5px 2px;
-            top: 8px;
-            left: 10px;
-            display: inline-block;
-            min-width: 10px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #ffffff;
-            line-height: 1;
-            vertical-align: baseline;
-            white-space: nowrap;
-            text-align: right;
-            border-radius: 10px;
-        }
-        .badge-danger {
-            background-color: #db5565;
-        }
-    </style>
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% block page_title %}بازآکادمی{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+
+    <link rel=stylesheet href="{% static 'codemirrorEditor/lib/codemirror.css' %}">
+
+    <link rel=stylesheet href="{% static 'codemirrorEditor/theme/night.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/3024-day.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/zenburn.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/3024-night.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/colorforth.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/hopscotch.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/duotone-dark.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/cobalt.css' %}">
+    <link rel="stylesheet" href="{% static 'codemirrorEditor/theme/eclipse.css' %}">
+
+    <link rel="stylesheet" href="{% static 'feed_back.css' %}">
 
 </head>
 <body>
 
-{% block header %}
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div class="collapse navbar-collapse" id="navbarsExample04">
-            <ul class="navbar-nav mr-auto">
-              <li class="nav-item active">
-                <a class="nav-link" href="{% url 'course:course_list' %}">خانه <span class="sr-only">(current)</span></a>
-              </li>
+<header class="fixed-top">
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark">
+        <a class="navbar-brand" href="{% url 'course:course_list' %}">بازآکادمی</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-            {% block navbar_links %}
-            {% endblock %}
-            </ul>
-        <form class="form-inline my-2 my-md-0">
-            <ul class="navbar-nav mr-auto">
-                <li class="nav-item">
-                    <button class="btn btn-dark nav-link" formaction="{% url 'notification:notification_inbox' %}">
-                        {% if notifications_count %}
-                            <span class="badge badge-danger"> {{ notifications_count }}</span>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+            {% with request.resolver_match.app_name as app_name %}
+                <ul class="nav navbar-right navbar-nav">
+                    {% if user.is_student %}
+                        <li class="nav-item{% if app_name == 'course' %} active{% endif %}">
+                            <a class="nav-link" href="{% url 'course:course_list' %}">دوره‌ها</a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_teacher %}
+                        <li class="nav-item{% if app_name == 'exercise' %} active{% endif %}">
+                            <a class="nav-link" href="{% url 'exercise:all_problems' %}">مشق‌ها</a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'course:course_list' %}">حرف‌کده</a></li>
+                    {% if user.is_staff %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">ادمین</a></li>
+                    {% endif %}
+                </ul>
+            {% endwith %}
+            {% if user.is_authenticated %}
+                <ul class="nav navbar-left navbar-nav mr-auto">
+                    <li class="nav-item dropdown ml-2 my-1 my-lg-0">
+                        {% if notifications_count or challenges_count %}
+                            <span class="badge badge-danger">{{ notifications_count|add:challenges_count }}</span>
                         {% endif %}
-                        <img style="background-color: #6c757d" class="rounded" src="{% static 'images/notification.png' %}" width="25" height="25">
-                    </button>
-                </li>
-                <li class="nav-item dropdown dropleft">
-                    <img class="rounded nav-link dropdown-toggle" id="dropdown04" aria-haspopup="true" style="cursor: pointer" aria-expanded="false" data-toggle="dropdown" src="{{ student_profile_picture_url }}" width="40" height="40">
-                <div class="dropdown-menu" aria-labelledby="dropdown04" id="dropdownitems">
-                    <p class="dropdown-item-text">{{ student_username }}</p>
-                  <a class="dropdown-item" href="#">پروفایل</a>
-                  <a class="dropdown-item" href="#">تنظیمات</a>
-                  <a class="dropdown-item" href="/accounts/logout/">خروج</a>
+                        <a role="button" class="btn btn-primary navbar-btn rounded-circle" href="#"
+                           data-toggle="dropdown">
+                            <i class="fa fa-bell"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            {% if not notifications_count|add:challenges_count %}
+                                <small class="dropdown-item-text">هیچ اعلانی ندارید!</small>
+                            {% endif %}
+                            <a class="dropdown-item" href="{% url 'notification:notification_inbox' %}">
+                                اعلان‌ها
+                                {% if notifications_count %}
+                                    <span class="badge badge-primary">{{ notifications_count }}</span>
+                                {% endif %}
+                            </a>
+                            {% if challenges_count %}
+                                <a class="dropdown-item" href="{% url 'exercise:daily_challenges' %}">
+                                    چالش‌های امروز
+                                    <span class="badge badge-primary"
+                                          title="حل نشده">{{ challenges_count }}</span>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown my-1 my-lg-0">
+                        <a class="" href="#" data-toggle="dropdown">
+                            <img class="rounded-circle profile-picture" src="{{ student_profile_picture_url }}"
+                                 width="40" height="40">
+                        </a>
+                        <div class="dropdown-menu">
+                            <p class="dropdown-item-text">{{ user.first_name|default:user.username }}</p>
+                            {% if user.is_student %}
+                                <p class="dropdown-item-text" id="credit">امتیاز: {{ user.student.compute_credit }}
+                                    <i class="fas fa-award"></i>
+                                </p>
+                            {% endif %}
+                            <a class="dropdown-item" href="#">پروفایل
+                                <i class="fa fa-user"></i>
+                            </a>
+                            <a class="dropdown-item" href="#">تنظیمات
+                                <i class="fa fa-bars"></i>
+                            </a>
+                            <a class="dropdown-item" href="{% url 'auth_logout' %}">خروج
+                                <i class="fa fa-sign-in-alt"></i></a>
+                        </div>
+                    </li>
+                </ul>
+            {% else %}
+                <div class="mr-auto">
+                    <a role="button" class="btn btn-primary navbar-btn"
+                       href="{% url 'registration_register' %}">ثبت نام
+                        <i class="fa fa-user-plus"></i></a>
+                    <a role="button" class="btn btn-success navbar-btn" href="{% url 'auth_login' %}">ورود
+                        <i class="fa fa-sign-in-alt"></i></a>
                 </div>
-              </li>
-            </ul>
-        </form>
-      </div>
+            {% endif %}
+        </div>
     </nav>
-{% endblock %}
+    <ul class="breadcrumb m-1 shadow-sm bg-light">
+        {% block breadcrumbs %}
+            <li class="breadcrumb-item active"><a><i
+                    class="fa fa-home"></i></a></li>
+        {% endblock %}
+    </ul>
+</header>
 
-{% block rating %}
-{% endblock %}
-
-{% block content %}
-{% endblock %}
-
-<footer class="footer">
-    <div class="container">
-        {% block footer %}
+<main class="container-fluid">
+    <div class="mt-5">
+        {% if error %}
+          <h1 class="text-center mt-5 " style="direction: ltr;">{{ error }}</h1>
+        {% endif %}
+        {% block content %}
         {% endblock %}
     </div>
+</main>
+
+<!-- The content of your page would go here. -->
+
+<footer class="footer-distributed">
+
+    <div class="footer-right">
+
+        <a href="#"><i class="fab fa-facebook"></i></a>
+        <a href="#"><i class="fab fa-twitter"></i></a>
+        <a href="#"><i class="fab fa-linkedin"></i></a>
+        <a href="#"><i class="fab fa-github"></i></a>
+    </div>
+
+    <div class="footer-center">
+        <p class="footer-links">
+            <a href="#">خانه</a>
+            ·
+            <a href="#">درباره‌ی ما</a>
+            ·
+            <a href="#">F.A.Q</a>
+            ·
+            <a href="#">ارتباط با ما</a>
+        </p>
+        <p>© کلیه حقوق این سایت متعلق به شرکت کافه بازار می باشد.</p>
+    </div>
+
 </footer>
 
-{% block js %}
-{% endblock %}
-</body>
 
+<script src="{% static 'codemirrorEditor/lib/codemirror.js' %}"></script>
+<script src="{% static 'codemirrorEditor/mode/clike/clike.js' %}"></script>
+<script src="{% static 'codemirrorEditor/mode/python/python.js' %}"></script>
+<script src="{% static 'codemirrorEditor/addon/edit/matchbrackets.js' %}"></script>
+<!-- jQuery CDN -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<!-- jQuery local fallback -->
+<script>window.jQuery || document.write('<script src="{% static '/js/jquery.min.js' %}"><\/script>')</script>
+<!-- Popper JS CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<!-- Bootstrap JS CDN -->
+<script src="https://cdn.rtlcss.com/bootstrap/v4.0.0/js/bootstrap.min.js"></script>
+<!-- Bootstrap JS local fallback -->
+<script>if (typeof($.fn.modal) === 'undefined') {
+    document.write('<script src="{% static 'js/bootstrap.js' %}"><\/script>')
+}
+
+</script>
+<script src="{% static 'js/script.js' %}"></script>
+<script src="{% static 'js/base_course_timer.js' %}"></script>
+<script src="{% static 'js/high_charter.js' %}"></script>
+</body>
 </html>

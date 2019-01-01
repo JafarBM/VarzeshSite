@@ -31,9 +31,9 @@ class SectionDetailViewTest(TestCase):
         response = self.client.get(section_detail_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context['current']['section'])
-        self.assertIsNotNone(response.context['previous']['section'])
-        self.assertIsNotNone(response.context['next']['section'])
+        self.assertIsNotNone(response.context['section'])
+        self.assertIsNotNone(response.context['previous_section'])
+        self.assertIsNotNone(response.context['next_section'])
 
     def test_is_none_for_no_previous(self):
         test_section = self.sections[0]
@@ -43,9 +43,10 @@ class SectionDetailViewTest(TestCase):
                                                      'section_slug': test_section.slug}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context['current']['section'])
-        self.assertIsNone(response.context['previous']['section'])
-        self.assertIsNotNone(response.context['next']['section'])
+        self.assertIsNotNone(response.context['section'])
+        self.assertIsNone(response.context['previous_section'])
+
+        self.assertIsNotNone(response.context['next_section'])
 
     def test_is_none_for_no_next(self):
         test_section = self.sections[self.sections_per_chapter - 1]
@@ -55,9 +56,9 @@ class SectionDetailViewTest(TestCase):
                                                      'section_slug': test_section.slug}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIsNotNone(response.context['current']['section'])
-        self.assertIsNotNone(response.context['previous']['section'])
-        self.assertIsNone(response.context['next']['section'])
+        self.assertIsNotNone(response.context['section'])
+        self.assertIsNotNone(response.context['previous_section'])
+        self.assertIsNone(response.context['next_section'])
 
     def test_is_section_locked(self):
         test_section = self.sections[2]
@@ -93,33 +94,16 @@ class SectionDetailViewTest(TestCase):
         self.assertTemplateUsed(response, 'course/section-detail.html')
         self.assertNotContains(response, "این قسمت برای شما موجود نمی باشد")
 
-    def test_section_pass_url(self):
-        test_section = self.sections[0]
-        section_pass_url = '/courses/{}/chapters/{}/sections/{}/pass'.format(self.parent_chapter.course.slug,
-                                                                             self.parent_chapter.slug,
-                                                                             test_section.slug)
-
-        response = self.client.get(section_pass_url)
-        # returns response
-        self.assertEqual(response.status_code, 200)
-
     def test_is_section_passed_after_pass_request(self):
         test_section = self.sections[0]
-        self.client.get(reverse('course:section-pass', kwargs={'course_slug': self.parent_chapter.course.slug,
-                                                               'chapter_slug': self.parent_chapter.slug,
-                                                               'section_slug': test_section.slug}))
-
+        test_section.pass_for_student(self.student)
         self.assertEqual(self.enrollment.passed_sections.count(), 1)
 
     def test_is_locked_section_not_passed_after_pass_request(self):
         test_section = self.sections[1]
         test_section_pre = self.sections[0]
         test_section.preconditions.add(test_section_pre)
-
-        self.client.get(reverse('course:section-pass', kwargs={'course_slug': self.parent_chapter.course.slug,
-                                                               'chapter_slug': self.parent_chapter.slug,
-                                                               'section_slug': test_section.slug}))
-
+        test_section.pass_for_student(self.student)
         self.assertEqual(self.enrollment.passed_sections.count(), 0)
 
     def test_start_time_first_visit(self):
@@ -173,3 +157,69 @@ class SectionDetailViewTest(TestCase):
                                          'section_slug': test_section.slug}), data=data)
 
         self.assertEqual(self.student.feedback_set.count(), 0)
+
+    def test_redirect_if_section_is_not_locked(self):
+        test_section = SectionFactory(chapter=self.parent_chapter, credit=-10)
+
+        section_unlock_url = '/courses/{}/chapters/{}/sections/{}/use-credit'.format(self.parent_chapter.course.slug,
+                                                                                     self.parent_chapter.slug,
+                                                                                     test_section.slug)
+
+        response = self.client.post(section_unlock_url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_not_create_log_insufficient_credit(self):
+        student_credit = self.student.compute_credit()
+        test_section = SectionFactory.create(chapter=self.parent_chapter, credit=10, preconditions=(self.sections[0],))
+
+        section_unlock_url = '/courses/{}/chapters/{}/sections/{}/use-credit'.format(self.parent_chapter.course.slug,
+                                                                                     self.parent_chapter.slug,
+                                                                                     test_section.slug)
+        response = self.client.post(section_unlock_url)
+        self.assertEqual(self.student.compute_credit(), student_credit)
+        self.assertEqual(response.status_code, 200)
+
+    def test_create_log_sufficient_credit(self):
+        student_credit = self.student.compute_credit()
+        test_section = SectionFactory.create(chapter=self.parent_chapter, credit=-10, preconditions=(self.sections[0],))
+
+        section_unlock_url = '/courses/{}/chapters/{}/sections/{}/use-credit'.format(self.parent_chapter.course.slug,
+                                                                                     self.parent_chapter.slug,
+                                                                                     test_section.slug)
+        response = self.client.post(section_unlock_url)
+        self.assertEqual(self.student.compute_credit(), student_credit - test_section.credit)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(len(test_section.credit_logs.all()), 1)
+
+    def test_unique_create_log(self):
+        test_section = SectionFactory.create(chapter=self.parent_chapter, credit=-10, preconditions=(self.sections[0],))
+
+        section_unlock_url = '/courses/{}/chapters/{}/sections/{}/use-credit'.format(self.parent_chapter.course.slug,
+                                                                                     self.parent_chapter.slug,
+                                                                                     test_section.slug)
+        self.client.post(section_unlock_url)
+        student_credit = self.student.compute_credit()
+        response = self.client.post(section_unlock_url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(student_credit, self.student.compute_credit())
+        self.assertEqual(len(test_section.credit_logs.all()), 1)
+
+    def test_unlock_section_after_use_credit(self):
+        test_section = SectionFactory.create(chapter=self.parent_chapter, credit=-10, preconditions=(self.sections[0],))
+
+        section_unlock_url = '/courses/{}/chapters/{}/sections/{}/use-credit'.format(self.parent_chapter.course.slug,
+                                                                                     self.parent_chapter.slug,
+                                                                                     test_section.slug)
+        section_detail_url = '/courses/{}/chapters/{}/sections/{}'.format(self.parent_chapter.course.slug,
+                                                                          self.parent_chapter.slug,
+                                                                          test_section.slug)
+
+        self.client.post(section_unlock_url)
+        self.client.post(section_detail_url)
+        self.assertEqual(test_section in self.enrollment.unlocked_sections.all(), True)
+
+    def test_unlock_function(self):
+        test_section = SectionFactory.create(chapter=self.parent_chapter, credit=-10, preconditions=(self.sections[0],))
+        self.enrollment.unlocked_sections.add(test_section)
+        self.assertEqual(len(self.enrollment.unlocked_sections.all()), 1)

@@ -10,6 +10,8 @@ from .tasks import send_mail
 
 
 def notify_new_course(course):
+    if not settings.SEND_EMAIL_NEW_COURSE:
+        return
     mail_subject = 'اضافه شدن درس جدید!'
     message = get_template('course/new_course_email.html').render({
         'course': course,
@@ -22,7 +24,7 @@ def notify_new_course(course):
 
 
 def create_course_notification(actor, created_course):
-    recipients = Member.objects.filter(is_student=True)
+    recipients = Member.objects.prefetch_related('student').filter(is_student=True)
     for recipient in recipients:
         if not created_course.is_lock(student=recipient.student):
             description = "اسم درس: " + created_course.title
@@ -36,13 +38,12 @@ def create_course_notification(actor, created_course):
 
 
 def create_chapter_notification(actor, created_chapter):
-    recipients = Member.objects.filter(is_student=True)
+    recipients = Member.objects.prefetch_related('student').filter(is_student=True)
     for recipient in recipients:
         if Enrollment.objects.filter(course=created_chapter.course, student=recipient.student):
             if not created_chapter.is_lock(student=recipient.student):
                 description = "اسم فصل: " + created_chapter.title
-                data = json.dumps(
-                    {'link': '/courses/' + str(created_chapter.course.slug) + '/chapters/' + str(created_chapter.slug)})
+                data = json.dumps({'link': '/courses/' + str(created_chapter.course.slug) + '/chapters/'})
                 notify.send(target=created_chapter,
                             sender=actor,
                             recipient=recipient,
@@ -52,10 +53,10 @@ def create_chapter_notification(actor, created_chapter):
 
 
 def create_section_notification(actor, created_section):
-    recipients = Member.objects.filter(is_student=True)
+    recipients = Member.objects.prefetch_related('student').filter(is_student=True)
     for recipient in recipients:
         if created_section in SectionEnrollment.objects.filter(student=recipient.student):
-            if not created_section.is_lock(student=recipient.student):
+            if not created_section.has_passed_preconditions(student=recipient.student):
                 description = "اسم بخش: " + created_section.title
                 data = json.dumps({'link': '/courses/' + str(created_section.chapter.course.slug) + '/chapters/' + str(
                     created_section.chapter.slug) + '/sections/' + str(created_section.slug)})
@@ -73,5 +74,5 @@ def enroll_new_section_for_students(section):
         section.enroll(enrollment.student)
 
 
-def new_notification_check(student):
-    return len(student.member.notifications.unread())
+def new_notification_count(student):
+    return student.member.notifications.unread().count()

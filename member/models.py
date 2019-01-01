@@ -1,5 +1,10 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Sum
+from django_jalali.db import models as jmodels
 
 from course.constants import NO_PROFILE_IMAGE_URL, MEMBER_UPLOAD_PICTURES
 
@@ -42,7 +47,7 @@ class Professor(models.Model):
         try:
             return self.profile_picture.url
         except ValueError:
-            return NO_PROFILE_IMAGE_URL
+            return settings.STATIC_URL + NO_PROFILE_IMAGE_URL
 
 
 class Student(models.Model):
@@ -71,4 +76,24 @@ class Student(models.Model):
         try:
             return self.profile_picture.url
         except ValueError:
-            return NO_PROFILE_IMAGE_URL
+            return settings.STATIC_URL + NO_PROFILE_IMAGE_URL
+
+    def compute_credit(self):
+        res = CreditLog.objects.defer("content_object", "content_type", "object_id").filter(
+            student=self).aggregate(Sum('credit'))['credit__sum']
+        if res is None:
+            return 0
+        return res
+
+
+class CreditLog(models.Model):
+    student = models.ForeignKey(Student, db_index=True, on_delete=models.CASCADE)
+    credit = models.IntegerField()
+    date = jmodels.jDateTimeField(auto_now_add=True)
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey()
+
+    class Meta:
+        unique_together = ('student', 'content_type', 'object_id')

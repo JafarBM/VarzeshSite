@@ -78,3 +78,19 @@ class TestChapter(TransactionTestCase):
         self.assertEqual(chapter1_1.is_finished(student), False)
         section1_1_1.pass_for_student(student)
         self.assertEqual(chapter1_1.is_finished(student), True)
+
+    def test_slug(self):
+        slug = "my-slug"
+        slug2 = "my-slug2"
+        course1 = CourseFactory(title="course title")
+        chapter1_1 = ChapterFactory(course=course1, slug=slug)
+        self.assertEqual(chapter1_1.slug, slug)
+        chapter1_1.slug = slug2
+        chapter1_1.save()
+        self.assertEqual(chapter1_1.slug, slug2)
+        chapter1_2 = ChapterFactory(title="title 1", course=course1)
+        self.assertEqual(chapter1_2.slug, "title-1")
+        chapter1_2.title = "new title 1"
+        chapter1_2.save()
+        self.assertEqual(chapter1_2.title, "new title 1")
+        self.assertEqual(chapter1_2.slug, "title-1")

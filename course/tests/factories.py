@@ -4,8 +4,10 @@ import factory
 from django.utils import timezone
 from factory.django import DjangoModelFactory
 
-from course.models import Course, Category, Tag, Chapter, Section, Enrollment, BaseCourse, Feedback
+from course.models import Course, Category, Tag, Chapter, Section, Enrollment, BaseCourse, Feedback, RecommendationTag
 from course.models import EnrollmentSectionPass
+from member.models import CreditLog
+from member.tests.factories import CreditLogFactory
 from member.tests.factories import MemberFactory, ProfessorFactory, StudentFactory
 
 
@@ -23,11 +25,19 @@ class TagFactory(DjangoModelFactory):
     name = factory.sequence(lambda n: 'tag{0}'.format(n))
 
 
+class RecommendationTagFactory(DjangoModelFactory):
+    class Meta:
+        model = RecommendationTag
+
+    name = factory.sequence(lambda n: 'recom-tag{0}'.format(n))
+
+
 class BaseCourseFactory(DjangoModelFactory):
     class Meta:
         model = BaseCourse
 
     title = factory.sequence(lambda n: 'title{0}'.format(n))
+    credit = 100
 
     @factory.post_generation
     def preconditions(self, create, extracted, **kwargs):
@@ -65,6 +75,7 @@ class SectionFactory(BaseCourseFactory):
     class Meta:
         model = Section
 
+    problem = factory.SubFactory('exercise.tests.factories.ProblemFactory')
     chapter = factory.SubFactory(ChapterFactory)
     order = factory.sequence(lambda n: n)
     point = factory.sequence(lambda n: n)
@@ -84,9 +95,9 @@ class EnrollmentFactory(DjangoModelFactory):
         model = Enrollment
 
     course = factory.SubFactory(CourseFactory)
-    member = factory.SubFactory(MemberFactory)
+    student = factory.SubFactory(StudentFactory)
     start_date = datetime.date.today()
-    end_date = datetime.date.today()
+    end_date = None
 
     @factory.post_generation
     def passed_sections(self, create, extracted, **kwargs):
@@ -95,6 +106,14 @@ class EnrollmentFactory(DjangoModelFactory):
         if extracted:
             for passed_section in extracted:
                 self.passed_sections.add(passed_section)
+
+    @factory.post_generation
+    def unlocked_sections(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for unlocked_section in extracted:
+                self.unlocked_sections.add(unlocked_section)
 
 
 class EnrollmentSectionPassFactory(DjangoModelFactory):
@@ -124,3 +143,24 @@ class FeedbackFactory(DjangoModelFactory):
     student = factory.SubFactory(StudentFactory)
     difficulty = factory.sequence(lambda n: (n % 10) + 1)
     quality = factory.sequence(lambda n: (n % 10) + 1)
+
+
+class CourseLogFactory(CreditLogFactory):
+    content_object = factory.SubFactory(CourseFactory)
+
+    class Meta:
+        model = CreditLog
+
+
+class ChapterLogFactory(CreditLogFactory):
+    content_object = factory.SubFactory(ChapterFactory)
+
+    class Meta:
+        model = CreditLog
+
+
+class SectionLogFactory(CreditLogFactory):
+    content_object = factory.SubFactory(SectionFactory)
+
+    class Meta:
+        model = CreditLog

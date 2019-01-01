@@ -1,5 +1,6 @@
 import factory
 from django.contrib.auth.hashers import make_password
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from factory.django import DjangoModelFactory
 
@@ -58,3 +59,16 @@ class MemberFactory(DjangoModelFactory):
 
     student = factory.RelatedFactory(StudentFactory, 'member')
     professor = factory.RelatedFactory(ProfessorFactory, 'member')
+
+
+class CreditLogFactory(DjangoModelFactory):
+    student = factory.SubFactory(StudentFactory)
+    credit = 0
+
+    object_id = factory.SelfAttribute('content_object.id')
+    content_type = factory.LazyAttribute(
+        lambda o: ContentType.objects.get_for_model(o.content_object))
+
+    class Meta:
+        exclude = ['content_object']
+        abstract = True

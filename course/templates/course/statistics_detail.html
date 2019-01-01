@@ -1,0 +1,161 @@
+{% if not section %}
+    <h1 class="text-center">مشکلی پیش آمده است</h1>
+{% endif %}
+<div class="row justify-content-md-center">
+    {% with section.get_feedbacks_count as feedbacks_count %}
+        {% if feedbacks_count %}
+            {% with section.get_difficulty_grouping as difficulty_grouping %}
+                <div id="container"></div>
+                <script>
+
+                Highcharts.setOptions({
+                    colors: ['#058DC7', '#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4']
+                });
+                Highcharts.chart('container', {
+                    chart: {
+                        type: 'pie'
+                    },
+                    title: {
+                        text: 'سختی بخش'
+                    },
+                    plotOptions: {
+                        series: {
+                            dataLabels: {
+                                enabled: true,
+                                format: '{point.name}: %{point.y:.1f}'
+                            }
+                        }
+                    },
+
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b> of total<br/>'
+                    },
+
+                    "series": [
+                        {
+                            "name": "difficulties",
+                            "colorByPoint": true,
+                            "data": [
+                                {% for k, v in difficulty_grouping.items %}
+                                    {
+                                        "name": '{{ k }}',
+                                        "y": {{ v }},
+                                    },
+                                {% endfor %}
+                            ]
+                        }
+                    ]
+                });
+            </script>
+            {% endwith %}
+            {% with section.get_quality_grouping as quality_grouping %}
+                <div id="container2"></div>
+                <script>
+
+                        Highcharts.setOptions({
+                            colors: ['#50B432', '#ED561B', '#DDDF00', '#24CBE5', '#64E572', '#FF9655', '#FFF263', '#6AF9C4']
+                        });
+                        Highcharts.chart('container2', {
+                            chart: {
+                                type: 'pie'
+                            },
+                            title: {
+                                text: 'کیفیت بخش'
+                            },
+                            plotOptions: {
+                                series: {
+                                    dataLabels: {
+                                        enabled: true,
+                                        format: '{point.name}: %{point.y:.1f}'
+                                    }
+                                }
+                            },
+
+                            tooltip: {
+                                headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                                pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b> of total<br/>'
+                            },
+
+
+                            "series": [
+                                {
+                                    "name": "qualities",
+                                    "colorByPoint": true,
+                                    "data": [
+                                        {% for k, v in quality_grouping.items %}
+                                            {
+                                                "name": '{{ k }}',
+                                                "y": {{ v }},
+                                            },
+                                        {% endfor %}
+                                    ]
+                                }
+                            ]
+                        });
+                    </script>
+            {% endwith %}
+        {% endif %}
+        <div class="col-md-9">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <p class="font-weight-bold text-center">آمار</p>
+                </div>
+
+                <div class="card-body">
+                    <p class="card-text flex-row px-4" style="display: flex;">
+                        <span>تعداد نظرات:</span>
+                        <span class="mr-auto" >{{ feedbacks_count }}</span>
+                    </p>
+                    <hr>
+                    {% with average_difficulty=section.get_average_difficulty %}
+                        <p class="card-text flex-row px-4" style="display: flex;">
+                            <span>متوسط سختی:</span>
+                            <span class="mr-auto">
+                                {% if average_difficulty %}{{ average_difficulty }}{% else %}-{% endif %}
+                            </span>
+                        </p>
+                    {% endwith %}
+                    <hr>
+                    {% with average_quality=section.get_average_quality %}
+                        <p class="card-text flex-row px-4" style="display: flex;">
+                            <span>متوسط کیفیت:</span>
+                            <span class="mr-auto">
+                                {% if average_quality %}{{ average_quality }}{% else %}-{% endif %}
+                            </span>
+                        </p>
+                    {% endwith %}
+                    <hr>
+                    {% with passer_count=section.get_passer_count %}
+                        <p class="card-text flex-row px-4" style="display: flex;">
+                            <span>تعداد پاس کنندگان:</span>
+                            <span class="mr-auto" >{{ passer_count }}</span>
+                        </p>
+                    {% endwith %}
+                    <hr>
+                    {% with section.get_splited_average_time_spent as average_time_spent %}
+                        <p class="card-text flex-row px-4" style="display: flex;">
+                            <span>متوسط زمان گذرانده شده :</span>
+                            <span class="mr-auto">
+                                {% if average_time_spent %}
+                                    {% if average_time_spent.days %}
+                                        {{ average_time_spent.days }}
+                                        روز
+                                    {% endif %}
+
+                                    {% if average_time_spent.hours %}
+                                        {{ average_time_spent.hours }}
+                                        ساعت
+                                    {% endif %}
+
+                                    {{ average_time_spent.minutes }}
+                                    دقیقه
+                                {% else %}-{% endif %}
+                            </span>
+                        </p>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    {% endwith %}
+</div>

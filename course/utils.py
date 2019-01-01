@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from .constants import WEEKENDS
+from course.constants import WEEKENDS
 
 
 def is_same(a, b):
@@ -23,9 +23,11 @@ def is_student_check(user):
     return user.is_student
 
 
-def add_navbar_data_context(student_username, notification_count,
-                            student, context):
-    context['student_username'] = student_username
-    context['notification_count'] = notification_count
-    context['student_profile_picture_url'] = student.get_profile_picture_url()
-    return context
+def is_teacher_check(user):
+    return user.is_teacher
+
+
+def split_time(time):
+    return {'days': time.days,
+            'hours': time.seconds // 3600,
+            'minutes': time.seconds // 60 - time.seconds // 3600 * 60}
