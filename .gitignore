@@ -65,3 +65,10 @@ venv/
 
 # Celery
 celerybeat-schedule
+
+#static
+
+static/
+!static/*.*
+!static/images/
+!static/img/
