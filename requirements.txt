@@ -31,7 +31,7 @@ Jinja2==2.10
 jsonfield==2.0.2
 kombu==4.2.1
 MarkupSafe==1.0
-numpy==1.15.1
+numpy==1.22.0
 parso==0.3.1
 pexpect==4.6.0
 pickleshare==0.7.4
