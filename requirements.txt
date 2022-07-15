@@ -9,7 +9,7 @@ coverage==4.5.1
 decorator==4.3.0
 Django>=2.1
 django-celery-beat==1.1.1
-django-celery-results==1.0.1
+django-celery-results==2.4.0
 django-ckeditor==5.6.1
 django-jalali==3.0.3
 django-js-asset==1.1.0
